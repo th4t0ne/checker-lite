@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Otwórz w przeglądarce</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      background-color: #111;
+      color: #eee;
+      font-family: monospace;
+      text-align: center;
+      padding: 50px 20px;
+    }
+    a {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #444;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+    }
+    a:hover {
+      background-color: #666;
+    }
+  </style>
+</head>
+<body>
+  <h2>🔒 Otwórz w przeglądarce</h2>
+  <p>Ta strona nie działa poprawnie w Messengerze lub Instagramie.<br>Otwórz ją w Chrome lub Safari:</p>
+  <a href="https://checkerls.vercel.app" target="_blank">👉 Otwórz stronę w przeglądarce</a>
+
+  <script>
+    const ua = navigator.userAgent;
+    const isWebView = /FBAN|FBAV|Instagram|Line|wv/.test(ua);
+
+    // Jeśli NIE jesteśmy w WebView → wracamy na stronę główną
+    if (!isWebView) {
+      window.location.href = "https://checkerls.vercel.app";
+    }
+  </script>
+</body>
+</html>

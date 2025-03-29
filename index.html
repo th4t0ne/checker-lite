@@ -4,7 +4,15 @@
   <meta charset="UTF-8" />
   <title>Legit Check</title>
 
-  <!-- 🛡️ WebView Killer – MUSI BYĆ PIERWSZY -->
+  <script>
+const ua = navigator.userAgent;
+const isWebView = /FBAN|FBAV|Instagram|Line|wv/.test(ua);
+
+if (isWebView) {
+  window.location.href = "https://checkerls.vercel.app/open-in-chrome.html";
+}
+</script>
+<!-- 🛡️ WebView Killer – MUSI BYĆ PIERWSZY -->
   <script>
     const ua = navigator.userAgent.toLowerCase();
     const wvAgents = ["fbav", "instagram", "whatsapp", "telegram", "tiktok", "snapchat", "reddit", "twitter", "linkedin", "wv"];

